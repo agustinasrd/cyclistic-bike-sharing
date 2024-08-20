@@ -1,0 +1,418 @@
+---
+title: "Studi Kasus Analisis Cyclistic Bike Sharing"
+author: "Agustina Surya Dewi"
+date: "2024-07-30"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  word_document: default
+---
+<style>
+  p {
+    text-align: justify;
+  }
+</style>
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Pendahuluan
+
+Pada 2016, Cyclistic meluncurkan penawaran berbagi sepeda yang sukses. Sejak itu, program tersebut telah berkembang menjadi armada 5.824 sepeda yang dilacak secara geografis dan dikunci ke dalam jaringan 692 stasiun di seluruh Chicago. Sepeda dapat diakses dari satu stasiun dan dikembalikan ke stasiun lainnya kapan pun di dalam sistem.
+
+Sampai saat ini, strategi pemasaran Cyclistic mengandalkan upaya untuk membangun kesadaran umum dan menarik segmen konsumen yang luas. Salah satu pendekatan yang membantu mewujudkan hal ini adalah fleksibilitas harga: tiket sekali jalan, tiket sehari penuh, dan keanggotaan tahunan. Pelanggan yang membeli tiket sekali jalan atau tiket sehari penuh disebut sebagai pengendara Casual. Pelanggan yang membeli keanggotaan tahunan adalah member Cyclistic.
+
+Analis keuangan Cyclistic telah menyimpulkan bahwa anggota tahunan jauh lebih menguntungkan dibandingkan pengendara biasa. Meskipun fleksibilitas harga membantu Cyclistic menarik lebih banyak pelanggan, Moreno percaya bahwa memaksimalkan jumlah anggota tahunan akan menjadi kunci pertumbuhan di masa depan. Daripada membuat kampanye pemasaran yang menargetkan pelanggan baru, Direktur pemasaran percaya bahwa ada peluang untuk mengubah pengendara biasa menjadi anggota. Ia mencatat bahwa pengendara biasa sudah mengetahui program Cyclistic dan telah memilih Cyclistic untuk kebutuhan mobilitas mereka.
+
+
+# Tujuan
+
+Tujuan dari analisis ini adalah untuk memahami perbedaan perilaku antara anggota tahunan dan pengendara biasa di Cyclistic, serta untuk mengidentifikasi faktor-faktor yang dapat mendorong pengendara biasa untuk beralih menjadi anggota tahunan. Lebih spesifik lagi, analisis ini bertujuan untuk menjawab pertanyaan-pertanyaan berikut:
+
+1. Bagaimana anggota tahunan dan pengendara biasa menggunakan sepeda secara berbeda?
+2. Mengapa pengendara biasa membeli keanggotaan tahunan Cyclistic?
+3. Bagaimana Cyclistic dapat menggunakan media digital untuk mempengaruhi pengendara biasa agar menjadi anggota tahunan?
+
+Dengan menjawab pertanyaan-pertanyaan ini, diharapkan dapat diperoleh wawasan yang dapat digunakan untuk merancang strategi pemasaran yang efektif guna meningkatkan konversi pengendara biasa menjadi anggota tahunan.
+
+
+# Dataset
+
+Dataset yang digunakan dalam analisis ini adalah data perjalanan historis sepeda dari Cyclistic yang mencakup periode 12 bulan terakhir. Data ini disediakan oleh Motivate International Inc. dan tersedia untuk analisis publik sesuai dengan lisensi <https://www.divvybikes.com/data-license-agreement> yang diberikan. Dataset ini dirancang untuk mengeksplorasi pola penggunaan sepeda oleh berbagai jenis pelanggan, baik anggota tahunan maupun pengendara biasa.
+
+
+# Persiapan
+
+## Import library
+
+```{r}
+options(warn = -1)
+library(readr)
+library(data.table)
+library(ggplot2)
+library(tidyverse)
+library(geosphere)
+library(leaflet)
+```
+
+## Import dataset dan menggabungkan dataset
+
+```{r}
+cyc_2023_07 <- read.csv("E:/Bootcamp/Digitalent/Google/capstone/Kasus 1 Cyclistic/Data/202307-divvy-tripdata/202307-divvy-tripdata.csv")
+cyc_2023_08 <- read.csv("E:/Bootcamp/Digitalent/Google/capstone/Kasus 1 Cyclistic/Data/202308-divvy-tripdata/202308-divvy-tripdata.csv")
+cyc_2023_09 <- read.csv("E:/Bootcamp/Digitalent/Google/capstone/Kasus 1 Cyclistic/Data/202309-divvy-tripdata/202309-divvy-tripdata.csv")
+cyc_2023_10 <- read.csv("E:/Bootcamp/Digitalent/Google/capstone/Kasus 1 Cyclistic/Data/202310-divvy-tripdata/202310-divvy-tripdata.csv")
+cyc_2023_11 <- read.csv("E:/Bootcamp/Digitalent/Google/capstone/Kasus 1 Cyclistic/Data/202311-divvy-tripdata/202311-divvy-tripdata.csv")
+cyc_2023_12 <- read.csv("E:/Bootcamp/Digitalent/Google/capstone/Kasus 1 Cyclistic/Data/202312-divvy-tripdata/202312-divvy-tripdata.csv")
+cyc_2024_01 <- read.csv("E:/Bootcamp/Digitalent/Google/capstone/Kasus 1 Cyclistic/Data/202401-divvy-tripdata/202401-divvy-tripdata.csv")
+cyc_2024_02 <- read.csv("E:/Bootcamp/Digitalent/Google/capstone/Kasus 1 Cyclistic/Data/202402-divvy-tripdata/202402-divvy-tripdata.csv")
+cyc_2024_03 <- read.csv("E:/Bootcamp/Digitalent/Google/capstone/Kasus 1 Cyclistic/Data/202403-divvy-tripdata/202403-divvy-tripdata.csv")
+cyc_2024_04 <- read.csv("E:/Bootcamp/Digitalent/Google/capstone/Kasus 1 Cyclistic/Data/202404-divvy-tripdata/202404-divvy-tripdata.csv")
+cyc_2024_05 <- read.csv("E:/Bootcamp/Digitalent/Google/capstone/Kasus 1 Cyclistic/Data/202405-divvy-tripdata/202405-divvy-tripdata.csv")
+cyc_2024_06 <- read.csv("E:/Bootcamp/Digitalent/Google/capstone/Kasus 1 Cyclistic/Data/202406-divvy-tripdata/202406-divvy-tripdata.csv")
+
+data_concat <- rbindlist(list(cyc_2023_07, cyc_2023_08, cyc_2023_09,cyc_2023_10, cyc_2023_11, cyc_2023_12,
+                         cyc_2024_01, cyc_2024_02, cyc_2024_03, cyc_2024_04, cyc_2024_05, cyc_2024_06))
+```
+
+## Informasi dataset
+
+```{r}
+head(data_concat)
+glimpse(data_concat)
+```
+
+Terdapat 5,734,381 baris dan 13 kolom dalam dataset yang digunakan. Setiap baris dalam dataset ini menunjukkan satu perjalanan sepeda yang dilakukan oleh pengguna Cyclistic. Kolom-kolom dalam dataset ini mencakup informasi berikut:
+
+1. ride_id: ID unik yang diberikan untuk setiap perjalanan sepeda.
+2. rideable_type: Jenis sepeda yang digunakan dalam perjalanan, yang bisa berupa electric_bike, classic_bike, atau docked_bike.
+3. started_at: Waktu mulai perjalanan.
+4. ended_at: Waktu berakhirnya perjalanan.
+5. start_station_name: Nama stasiun tempat sepeda dimulai.
+6. start_station_id: ID stasiun tempat sepeda dimulai.
+7. end_station_name: Nama stasiun tempat sepeda dikembalikan.
+8. end_station_id: ID stasiun tempat sepeda dikembalikan.
+9. start_lat: Latitude lokasi awal perjalanan.
+10. start_lng: Longitude lokasi awal perjalanan.
+11. end_lat: Latitude lokasi akhir perjalanan.
+12. end_lng: Longitude lokasi akhir perjalanan.
+13. member_casual: Tipe pelanggan, yang bisa berupa "member" (anggota tahunan) atau "casual" (pengendara biasa).
+
+
+# Proses
+
+## Cleaning data
+
+### Mengecek duplikat data
+
+```{r}
+sum(duplicated(data_concat))
+```
+
+Hasil dari pemeriksaan ini menunjukkan bahwa tidak ada baris yang terduplikat dalam dataset. Ini berarti setiap baris data dalam dataset adalah unik dan tidak ada pengulangan entri.
+
+### Mengecek missing value
+
+```{r}
+sum(is.na(data_concat))
+colSums(is.na(data_concat))
+```
+
+Hasil dari pemeriksaan ini menunjukkan bahwa terdapat 15,838 nilai yang hilang di seluruh dataset. Untuk memahami lebih lanjut, dilakukan pemeriksaan jumlah nilai yang hilang pada setiap kolom dan dari hasil tersebut, terlihat bahwa kolom end_lat dan end_lng memiliki jumlah nilai yang hilang yang signifikan, masing-masing sebanyak 7,919 nilai. Ini menunjukkan bahwa informasi tentang koordinat akhir perjalanan tidak tersedia untuk sejumlah besar entri.
+
+Untuk mengatasi masalah missing value dalam dataset, akan dilakukan penghapusan entri (data) yang mengandung missing value. Keputusan ini diambil karena data yang tersisa setelah penghapusan masih cukup besar untuk melakukan analisis yang mendalam dan valid. 
+
+```{r}
+data_cleaned <- na.omit(data_concat)
+sum(is.na(data_cleaned))
+nrow(data_cleaned)
+```
+Setelah dilakukan penghapusan entri (data) yang mengandung missing value, total baris dari dataset yang akan digunakan adalah 5,726,462.
+
+
+## Transformasi data
+
+Menambahkan kolom baru untuk tanggal, bulan, hari, tahun, hari dalam seminggu, dan jam untuk analisis lebih lanjut.
+
+```{r}
+data_cleaned$date <- as.Date(data_cleaned$started_at) 
+data_cleaned$date_end <- as.Date(data_cleaned$ended_at)
+data_cleaned$month <- format(as.Date(data_cleaned$date), "%m")
+data_cleaned$day <- format(as.Date(data_cleaned$date), "%d")
+data_cleaned$year <- format(as.Date(data_cleaned$date), "%Y")
+data_cleaned$day_of_week <- format(as.Date(data_cleaned$date), "%A")
+data_cleaned$hour <- format(as.Date(data_cleaned$date), "%H")
+```
+
+
+# Analisis
+
+### Analisis Jenis Sepeda
+
+```{r, echo=TRUE}
+count_bike <- count(data_cleaned, rideable_type)
+ggplot(data = count_bike) +
+  geom_bar(mapping = aes(x = rideable_type, y = n), stat = "identity", fill = "blue") +
+  geom_text(mapping = aes(x = rideable_type, y = n, label = n), vjust = -0.5) +
+  labs(x="Bike Type", y="Number of Rider")
+  ylim(0, max(count_bike$n) * 1.1)
+```
+
+Jumlah pengendara yang menggunakan classic bike dan electric bike hampir sama, yaitu 2.847.053 dan 2.846.106, dengan selisih hanya 947 pengendara. Sebaliknya, jumlah pengendara yang menggunakan docked bike jauh lebih sedikit, yaitu hanya 33.303 pengendara. Perbedaan yang signifikan ini menunjukkan bahwa ada kecenderungan yang kuat di antara para pengendara untuk memilih classic bike atau electric bike dibandingkan docked bike. Hal ini mungkin disebabkan oleh preferensi terhadap fitur atau kenyamanan yang ditawarkan oleh classic bike dan electric bike, dibandingkan dengan docked bike yang mungkin memiliki keterbatasan tertentu dalam hal fleksibilitas atau pengalaman berkendara.
+
+
+### Analisis Tipe Pelanggan
+
+```{r, echo=TRUE}
+count_cust <- count(data_cleaned, member_casual)
+ggplot(data = count_cust)+
+  geom_bar(mapping = aes(x = member_casual, y = n), stat = "identity", fill = "red") +
+  geom_text(mapping = aes(x = member_casual, y = n, label = n), vjust = -0.5) +
+  labs(x = "Rider Type", y = "Number of Rider", fill = "Rider Type") +
+  ylim(0, max(count_cust$n) * 1.1) 
+```
+
+Berdasarkan tipe pelanggan di Cyclistic, jumlah anggota tahunan (member) jauh lebih banyak dibandingkan dengan pengendara biasa (casual). Jumlah anggota tahunan mencapai 3.683.404, sedangkan jumlah pengendara biasa adalah 2.043.058, dengan selisih yang cukup besar yaitu 1.640.346. Meskipun terdapat perbedaan signifikan antara jumlah anggota dan pengendara biasa, jumlah pengendara biasa tetap cukup besar. Oleh karena itu, penting bagi Cyclistic untuk mempertimbangkan strategi yang efektif dalam mengubah pengendara biasa menjadi anggota tahunan, mengingat potensi besar yang ada dalam segmen pengendara biasa. Selain itu, dengan adanya perbedaan yang jelas antara kedua kelompok ini, Cyclistic dapat menyusun program pemasaran yang lebih tertarget dan disesuaikan dengan preferensi masing-masing kelompok untuk meningkatkan retensi dan konversi pelanggan.
+
+
+### Analisis Penggunaan Sepeda Berdasarkan Tipe Pelanggan
+
+```{r, echo=TRUE}
+count_bike_cust <- data_cleaned %>%
+  count(rideable_type, member_casual)
+
+ggplot(data = count_bike_cust) +
+  geom_bar(mapping = aes(x = rideable_type, y = n, fill = member_casual), stat = "identity", position = "dodge") +
+  geom_text(mapping = aes(x = rideable_type, y = n, label = n, group = member_casual), 
+            position = position_dodge(width = 0.9), vjust = -0.5) +
+  labs(x = "Bike Type", y = "Number of Rider", fill = "Rider Type") +
+  ylim(0, max(count_bike_cust$n) * 1.1)
+```
+
+Anggota tahunan (member) menunjukkan preferensi yang lebih besar terhadap classic bike dibandingkan electric bike, meskipun selisihnya tidak terlalu besar. Jumlah Anggota tahunan yang menggunakan classic bike adalah 1.887.857, sedangkan yang menggunakan electric bike adalah 1.795.547, dengan selisih sebanyak 92.310. Di sisi lain, tidak ada Anggota tahunan yang menggunakan docked bike. Dalam hal ini, Anggota tahunan memiliki kecenderungan untuk menggunakan jenis sepeda yang lebih tradisional seperti classic bike, yang mungkin menunjukkan preferensi terhadap pengalaman bersepeda yang lebih konvensional atau nostalgia.
+
+Pengendara Biasa (Casual) lebih banyak menggunakan electric bike dibandingkan classic bike, dengan jumlah pengendara biasa yang menggunakan electric bike mencapai 1.050.559 dan classic bike sebanyak 959.196. Semua pengguna docked bike adalah pengendara biasa, tetapi jumlahnya sangat kecil yaitu 33.303. Dalam hal ini, pengendara biasa menunjukkan minat yang lebih besar terhadap electric bike, yang mungkin lebih menawarkan kenyamanan atau kemudahan dalam penggunaan. Hal ini bisa menunjukkan bahwa pengendara biasa mencari kemudahan dan efisiensi lebih dari sepeda yang mereka pilih.
+
+Temuan ini menunjukkan bahwa Anggota tahunan cenderung lebih setia dan mungkin lebih memilih sepeda yang lebih familiar dan nyaman, sedangkan pengendara biasa mungkin lebih terbuka untuk mencoba jenis sepeda yang menawarkan kepraktisan dan teknologi terbaru. Selain itu, meskipun Anggota tahunan memiliki kecenderungan yang lebih kuat terhadap classic bike, baik pengendara biasa maupun Anggota tahunan lebih banyak memilih electric bike dibandingkan docked bike. Hal ini dapat memberikan insight penting bagi Cyclistic dalam merancang strategi pemasaran dan pengembangan produk. Mengingat minat yang lebih rendah terhadap docked bike, mungkin perlu ada evaluasi lebih lanjut mengenai kepuasan pengguna atau potensi pemasaran untuk jenis sepeda ini. Sementara itu, fokus pada meningkatkan pengalaman penggunaan electric bike dan classic bike dapat membantu dalam menarik dan mempertahankan pelanggan baik anggota tahunan maupun pengendara biasa. Cyclistic juga dapat mempertimbangkan untuk menyesuaikan penawaran dan strategi pemasaran mereka berdasarkan jenis pelanggan. Misalnya, untuk Anggota tahunan, meningkatkan pengalaman berkendara dengan classic bike dan menjelaskan nilai-nilai dari docked bike mungkin membantu. Sementara itu, untuk pengendara biasa, promosi yang menekankan kenyamanan dan kepraktisan electric bike mungkin lebih efektif.
+
+
+### Analisis Penggunaan Sepeda Berdasarkan Bulan
+
+```{r, echo=TRUE}
+count_month_cust <- data_cleaned %>%
+  count(month, member_casual)
+
+ggplot(data = count_month_cust) + 
+  geom_bar(mapping = aes(x = month, y = n, fill = member_casual), stat = "identity", position = "dodge") +
+  labs(x = "Month", y = "Number of Rider", fill = "Member Type") +
+  scale_x_discrete(labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+```
+
+Jumlah pengendara dari kedua tipe pelanggan menurun secara signifikan selama bulan-bulan musim dingin, yaitu dari Desember hingga Februari. Ini mungkin disebabkan oleh cuaca yang kurang mendukung untuk bersepeda, terutama di wilayah Chicago.
+Penggunaan sepeda oleh Anggota tahunan (member) mencapai puncaknya antara bulan Mei hingga Oktober, dengan puncak tertinggi pada bulan Agustus. Ini menunjukkan bahwa Anggota tahunan (member) lebih cenderung memanfaatkan keanggotaan mereka selama bulan-bulan dengan cuaca yang lebih hangat dan lebih stabil. Penurunan yang cukup besar di luar periode ini menunjukkan bahwa penggunaan layanan oleh Anggota tahunan (member) sangat dipengaruhi oleh kondisi cuaca dan musim.
+
+Penggunaan oleh pengendara biasa (casual) memuncak antara bulan Mei hingga September, dengan puncak tertinggi pada bulan Juli. Pengendara biasa (casual) mungkin lebih bersifat musiman dalam penggunaan mereka, lebih sering bersepeda selama bulan-bulan musim panas ketika cuaca sangat mendukung untuk kegiatan outdoor. Mereka juga cenderung mengurangi penggunaan selama bulan-bulan musim gugur dan musim dingin.
+
+Cyclistic dapat menggunakan informasi ini untuk mengoptimalkan strategi pemasaran dan penawaran mereka. Misalnya, mereka dapat menawarkan promosi atau insentif khusus untuk menarik lebih banyak pelanggan selama musim dingin atau mengadakan kampanye pemasaran yang difokuskan pada bulan-bulan musim panas untuk menarik lebih banyak pengendara biasa yang mungkin mempertimbangkan untuk menjadi Anggota tahunan.
+Mengetahui bahwa ada penurunan signifikan dalam penggunaan selama bulan-bulan tertentu, Cyclistic dapat menyesuaikan jumlah sepeda yang tersedia, perawatan, dan logistik lainnya untuk mengakomodasi fluktuasi musiman ini, serta merencanakan peningkatan layanan selama bulan-bulan dengan penggunaan puncak.
+
+### Analisis Penggunaan Sepeda Berdasarkan Hari
+
+```{r, echo=TRUE}
+count_day_cust <- data_cleaned %>%
+  count(day_of_week, member_casual) %>%
+  mutate(day_of_week = factor(day_of_week, 
+                              levels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")))
+
+ggplot(data = count_day_cust) + 
+  geom_bar(mapping = aes(x = day_of_week, y = n, fill = member_casual), stat = "identity", position = "dodge") +
+  labs(x = "Day of Week", y = "Number of Rider", fill = "Member Type")
+
+```
+
+Anggota tahunan (member) memiliki jumlah pengendara terendah pada hari Sabtu dan Minggu, hal ini menunjukkan bahwa anggota tahunan cenderung menggunakan sepeda lebih sering pada hari kerja, kemungkinan besar untuk keperluan perjalanan rutin. Penurunan jumlah pengendara pada akhir pekan bisa mengindikasikan bahwa sepeda lebih jarang digunakan oleh mereka untuk rekreasi atau kegiatan non-rutin.
+
+Pengendara biasa (casual) lebih banyak berkendara pada hari Jumat, Sabtu, dan Minggu, hal ini menunjukkan bahwa kelompok ini cenderung menggunakan sepeda untuk kegiatan rekreasi atau aktivitas yang tidak terkait dengan pekerjaan. Peningkatan penggunaan pada akhir pekan menunjukkan bahwa sepeda mungkin lebih sering digunakan sebagai bagian dari kegiatan santai atau liburan.
+
+### Analisis Jam yang paling sering digunakan oleh pengendara (Member Vs. Casual) untuk memulai perjalanan mereka
+
+```{r, echo=TRUE}
+data_cleaned$ride_minutes <-  as.numeric(difftime(data_cleaned$ended_at, data_cleaned$started_at, units = "mins"))
+
+casual <- data_cleaned %>%
+  filter(member_casual == "casual")
+
+casual_hour <- casual %>%
+  mutate(hour = hour(started_at))
+
+count_hour_cus <- casual_hour %>%
+  count(hour) %>%
+  arrange(hour)
+
+ggplot(data = count_hour_cus) + 
+  geom_line(mapping = aes(x = hour, y = n), stat = "identity") +
+  labs(x = "Hour of the Day", y = "Number of Casual Riders") +
+  theme_minimal() +
+  coord_polar(start = 0) +
+  scale_x_continuous(breaks = 0:23)
+```
+```{r, echo=FALSE}
+member <- data_cleaned %>%
+  filter(member_casual == "member")
+
+member_hour <- member %>%
+  mutate(hour = hour(started_at))
+
+count_hour_member <- member_hour %>%
+  count(hour) %>%
+  arrange(hour)
+
+ggplot(data = count_hour_member) + 
+  geom_line(mapping = aes(x = hour, y = n), stat = "identity") +
+  labs(x = "Hour of the Day", y = "Number of Member Riders") +
+  theme_minimal() +
+  coord_polar(start = 0) +
+  scale_x_continuous(breaks = 0:23)
+```
+
+Pengendara biasa (casual) cenderung menggunakan sepeda di pagi hari dengan puncak penggunaan pada pukul 8 AM dan sore hari pada pukul 5 PM. Ini menunjukkan bahwa pengendara biasa mungkin menggunakan sepeda sebagai bagian dari aktivitas rekreasi atau perjalanan santai yang tidak terikat dengan jam kerja. Peningkatan penggunaan pada sore hari bisa juga terkait dengan kegiatan setelah bekerja atau sekolah.
+
+Anggota tahunan (member) memiliki pola penggunaan yang lebih teratur sepanjang hari, dengan puncak pada pukul 8 AM, 12 PM, dan 5 PM. Pola ini menunjukkan bahwa anggota tahunan kemungkinan besar menggunakan sepeda untuk commuting atau keperluan sehari-hari yang lebih terstruktur. Puncak pada pagi hari (8 AM) dan sore hari (5 PM) mengindikasikan penggunaan untuk perjalanan ke dan dari tempat kerja, sementara puncak pada siang hari (12 PM) mungkin terkait dengan perjalanan makan siang atau aktivitas lainnya selama jam istirahat.
+
+Dari analisis ini, dapat disimpulkan bahwa pengendara biasa (casual) lebih cenderung menggunakan sepeda secara fleksibel dan lebih terfokus pada waktu rekreasi, sementara Anggota tahunan (member) cenderung menggunakan sepeda untuk keperluan yang lebih rutin dan terikat dengan jadwal harian mereka.
+
+### Analisis stasiun awal terpopuler di kalangan pengendara biasa (Casual)
+
+```{r, echo=TRUE}
+top5_start_station_casual <- casual %>%
+  filter(start_station_name != "" & str_trim(start_station_name) != "") %>%
+  count(start_station_name, member_casual) %>%
+  arrange(desc(n)) %>%
+  slice_max(n, n = 5)
+
+ggplot(data = top5_start_station_casual) +
+  geom_bar(mapping = aes(x = reorder(start_station_name, -n), 
+                         y = n, fill = member_casual), stat = "identity") +
+  geom_text(mapping = aes(x = reorder(start_station_name, -n), 
+                          y = n, label = n), 
+            position = position_dodge(width = 0.9), vjust = -0.5) +
+  labs(x = "Start Station Name", y = "Number of Riders") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Analisis ini dilakukan pada data perjalanan yang memiliki nama start station (tidak kosong), karena dalam dataset terdapat beberapa baris dengan start station name yang kosong. Kemungkinan besar, pengendara memulai perjalanan bukan dari stasiun resmi atau dari lokasi yang tidak teridentifikasi sebagai stasiun. 
+
+Berdasarkan data yang tersedia, stasiun-stasiun yang paling banyak dipilih oleh pengendara biasa (casual) untuk memulai perjalanan adalah sebagai berikut:
+
+1. Streeter Dr & Grand Ave
+2. DuSable Lake Shore Dr & Monroe St
+3. Michigan Ave & Oak St
+4. DuSable Lake Shore Dr & North Blvd
+5. Millennium Park
+
+Stasiun-stasiun ini umumnya terletak di area pusat kota atau dekat dengan tempat wisata populer di Chicago, menunjukkan bahwa pengendara biasa mungkin lebih cenderung menggunakan sepeda untuk perjalanan rekreasi atau wisata di lokasi-lokasi ini.
+
+
+### Analisis stasiun awal terpopuler di kalangan Anggota tahunan (Member)
+
+```{r, echo=TRUE}
+top5_start_station_member <- member %>%
+  filter(start_station_name != "" & str_trim(start_station_name) != "") %>%
+  count(start_station_name, member_casual) %>%
+  arrange(desc(n)) %>%
+  slice_max(n, n = 5)
+
+ggplot(data = top5_start_station_member) +
+  geom_bar(mapping = aes(x = reorder(start_station_name, -n), 
+                         y = n, fill = member_casual), stat = "identity") +
+  geom_text(mapping = aes(x = reorder(start_station_name, -n), 
+                          y = n, label = n), 
+            position = position_dodge(width = 0.9), vjust = -0.5) +
+  labs(x = "Start Station Name", y = "Number of Riders") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Analisis ini juga dilakukan pada data perjalanan yang memiliki nama start station (tidak kosong). Berdasarkan data yang tersedia, stasiun-stasiun yang paling banyak dipilih oleh Anggota tahunan (member) untuk memulai perjalanan adalah sebagai berikut:
+1. Clinton St & Washington Blvd
+2. Kingsbury St & Kinzie St
+3. Clark St & Elm St
+4. Clinton St & Madison St
+5. Wells St & Concord Ln
+
+Stasiun-stasiun ini umumnya terletak di area bisnis atau dekat dengan pusat transportasi publik, menunjukkan bahwa Anggota tahunan (member) mungkin lebih cenderung menggunakan sepeda untuk perjalanan harian, seperti perjalanan ke tempat kerja atau untuk keperluan pribadi di area-area strategis ini.
+
+
+### Analisis jalur yang banyak dilalui oleh kedua tipe pelanggan
+
+#### Pengendara biasa (Casual)
+
+```{r, echo=TRUE}
+data_filter <- data_cleaned %>%
+  filter(start_lat != end_lat & start_lng != end_lng) %>%
+  group_by(start_lat, start_lng, end_lat, end_lng, member_casual, rideable_type) %>%
+  summarise(total = n(), .groups="drop") %>%
+  filter(total > 250)
+
+sample_size <- min(nrow(data_filter %>% filter(member_casual == "casual")),
+                   nrow(data_filter %>% filter(member_casual == "member")))
+
+casual <- data_filter %>%
+  filter(member_casual == "casual") %>%
+  slice_sample(n = sample_size)
+
+leaflet() %>%
+  addTiles() %>%
+  fitBounds(lng1 = -87.7, lat1 = 41.79, lng2 = -87.55, lat2 = 41.99) %>%
+  addPolylines(
+    lng = c(casual$start_lng, casual$end_lng),
+    lat = c(casual$start_lat, casual$end_lat),
+    color = "blue",
+    weight = 1
+  )
+```
+
+
+#### Anggota tahunan (Member)
+
+```{r, echo=TRUE}
+data_filter <- data_cleaned %>%
+  filter(start_lat != end_lat & start_lng != end_lng) %>%
+  group_by(start_lat, start_lng, end_lat, end_lng, member_casual, rideable_type) %>%
+  summarise(total = n(), .groups="drop") %>%
+  filter(total > 250)
+
+sample_size <- min(nrow(data_filter %>% filter(member_casual == "casual")),
+                   nrow(data_filter %>% filter(member_casual == "member")))
+
+member <- data_filter %>%
+  filter(member_casual == "member") %>%
+  slice_sample(n = sample_size)
+
+leaflet() %>%
+  addTiles() %>%
+  fitBounds(lng1 = -87.7, lat1 = 41.79, lng2 = -87.55, lat2 = 41.99) %>%
+  addPolylines(
+    lng = c(member$start_lng, member$end_lng),
+    lat = c(member$start_lat, member$end_lat),
+    color = "red",
+    weight = 1
+  )
+```
+
+Hasil dari visualisasi di atas menggambarkan perbedaan pola jalur yang sering dilalui oleh kedua tipe pelanggan. Jalur yang sering dilalui oleh pengendara biasa (casual) cenderung lebih terpusat, mungkin mencerminkan preferensi mereka untuk area populer atau tujuan wisata tertentu. Sebaliknya, jalur yang dilalui oleh Anggota tahunan (member) lebih tersebar, menunjukkan bahwa mereka mungkin menggunakan sepeda sebagai bagian dari rutinitas harian yang melibatkan perjalanan ke berbagai lokasi di seluruh kota. Pola ini bisa menunjukkan bahwa anggota tahunan memiliki mobilitas yang lebih beragam dan tidak terbatas pada lokasi-lokasi populer saja.
+
+# Kesimpulan
+Analisis terhadap berbagai variabel dalam dataset ini memberikan wawasan yang mendalam tentang pola penggunaan sepeda oleh anggota tahunan dan pengendara biasa. Berikut adalah penjelasan rinci yang menjawab pertanyaan-pertanyaan kunci yang diajukan dalam analisis ini:
+
+1. Bagaimana anggota tahunan dan pengendara biasa menggunakan sepeda secara berbeda?
+Berdasarkan analisis, pola penggunaan sepeda antara anggota tahunan (member) dan pengendara biasa (casual) menunjukkan perbedaan signifikan. Anggota tahunan (member) cenderung memiliki pola berkendara yang lebih konsisten sepanjang hari dan tahun, dengan puncak penggunaan pada bulan-bulan tertentu, terutama dari Mei hingga Oktober, serta pada waktu pagi dan sore hari. Mereka memulai perjalanan dari stasiun-stasiun tertentu dan memiliki jalur berkendara yang lebih menyebar ke berbagai area. Sebaliknya, pengendara biasa (casual) lebih aktif pada akhir pekan, dengan puncak penggunaan pada hari Jumat, Sabtu, dan Minggu, dan mereka memulai perjalanan pada waktu pagi dengan puncak tertinggi pada pukul 5 PM. Jalur mereka lebih terpusat di area tertentu, mencerminkan kebiasaan berkendara yang berbeda dari Anggota tahunan.
+
+2. Mengapa pengendara biasa membeli keanggotaan tahunan Cyclistic?
+Berdasarkan analisis, pengendara biasa (casual) cenderung menggunakan sepeda pada akhir pekan dan lebih banyak berkendara pada waktu-waktu tertentu dalam sehari. Kecenderungan ini mungkin dapat membuat mereka melihat keuntungan ekonomis dari biaya keanggotaan tahunan dibandingkan dengan biaya per perjalanan. Dengan mempromosikan keuntungan keanggotaan tahunan yang meliputi akses yang lebih mudah dan biaya yang lebih rendah per perjalanan bagi mereka yang berkendara secara reguler, Cyclistic dapat menarik pengendara biasa untuk beralih menjadi Anggota tahunan (member). Penawaran yang menarik, seperti akses tanpa batas atau diskon khusus, mungkin dapat memotivasi mereka untuk membeli Anggota tahunan (member).
+
+3. Bagaimana Cyclistic dapat menggunakan media digital untuk mempengaruhi pengendara biasa agar menjadi anggota tahunan?
+Cyclistic dapat memanfaatkan media digital secara strategis untuk mempengaruhi pengendara biasa (casual) agar menjadi anggota tahunan (member). Ini termasuk menjalankan iklan digital yang menargetkan pelanggan dengan pola berkendara tertentu, seperti iklan yang difokuskan pada pelanggan yang sering berkendara pada akhir pekan, pada jam-jam puncak, atau jalur yang populer (Lokasi yang poluler). Selain itu, Cyclistic dapat menggunakan aplikasi dan media sosial untuk menawarkan promosi, memberi tahu tentang manfaat keanggotaan tahunan, dan membagikan testimoni dari anggota yang puas. Penawaran waktu terbatas atau promosi musiman juga bisa menjadi strategi efektif untuk menarik pengendara biasa mencoba keanggotaan tahunan.
+
